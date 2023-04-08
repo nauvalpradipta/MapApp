@@ -7,8 +7,14 @@ import androidx.core.content.ContextCompat;
 import androidx.fragment.app.FragmentActivity;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -17,7 +23,10 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptor;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.MapStyleOptions;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.example.mapapp1.databinding.ActivityMapsBinding;
@@ -58,13 +67,39 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Add a marker in Sydney and move the camera
         LatLng vokasiUGM = new LatLng(-7.7747915, 110.3723241);
-        mMap.addMarker(new MarkerOptions().position(vokasiUGM).title("Marker in Vokasi UGM"));
+        mMap.addMarker(new MarkerOptions().position(vokasiUGM).title("Marker in Vokasi UGM")
+                .icon(bitmapDescriptorFromVector(getApplicationContext(),R.drawable.globe)));
         //mMap.moveCamera(CameraUpdateFactory.newLatLng(vokasiUGM);
         mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(vokasiUGM, 20));
 
         setMapLongClick(mMap);
         setPoiClick(mMap);
         enableMyLocation();
+
+        try {
+            // Customise the styling of the base map using a JSON object defined
+            // in a raw resource file.
+            boolean success = googleMap.setMapStyle(
+                    MapStyleOptions.loadRawResourceStyle(
+                            this, R.raw.mapstyle));
+
+            if (!success) {
+                Log.e("MapsActivity", "Style parsing failed.");
+            }
+        } catch (Resources.NotFoundException e) {
+            Log.e("MapsActivity", "Can't find style. Error: ", e);
+        }
+    }
+
+    private BitmapDescriptor bitmapDescriptorFromVector(Context context, int vectorResId){
+        Drawable vectorDrawable = ContextCompat.getDrawable(context, vectorResId);
+        vectorDrawable.setBounds(0,0,vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight());
+        Bitmap bitmap = Bitmap.createBitmap(vectorDrawable.getIntrinsicWidth(),
+                vectorDrawable.getIntrinsicHeight(),Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmap);
+        vectorDrawable.draw(canvas);
+        return BitmapDescriptorFactory.fromBitmap(bitmap);
     }
 
     @Override
@@ -104,7 +139,8 @@ public class MapsActivity extends AppCompatActivity implements OnMapReadyCallbac
                         latLng.longitude);
                 map.addMarker(new MarkerOptions().position(latLng)
                         .title("Dropped pin")
-                        .snippet(text));
+                        .snippet(text)
+                        .icon(bitmapDescriptorFromVector(getApplicationContext(),R.drawable.globe)));
             }
         });
     }
